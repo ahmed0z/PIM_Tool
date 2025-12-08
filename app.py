@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import pickle
 import os
+import glob
 from datetime import datetime
 from io import BytesIO
 from openpyxl import load_workbook
@@ -19,8 +20,28 @@ def load_preset_db():
             return pickle.load(f)
     return None
 
+def cleanup_old_preset_files():
+    """Remove old preset Excel and PKL files (except preset_db.pkl)."""
+    app_dir = os.path.dirname(os.path.abspath(__file__))
+    patterns = ['*.pkl', '*.xlsx', '*.xlsm', '*.xltx', '*.xltm']
+    removed = []
+    for pattern in patterns:
+        for filepath in glob.glob(os.path.join(app_dir, pattern)):
+            filename = os.path.basename(filepath)
+            # Keep only preset_db.pkl, remove all other pkl/excel files
+            if filename != 'preset_db.pkl':
+                try:
+                    os.remove(filepath)
+                    removed.append(filename)
+                except Exception:
+                    pass
+    return removed
+
 def save_preset_db(df):
-    """Save the preset database to file."""
+    """Save the preset database to file and cleanup old files."""
+    # Cleanup old preset files first
+    cleanup_old_preset_files()
+    # Save new preset
     with open(PRESET_DB_PATH, 'wb') as f:
         pickle.dump(df, f)
 
