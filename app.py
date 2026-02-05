@@ -6,7 +6,8 @@ import glob
 from datetime import datetime
 from io import BytesIO
 from openpyxl import load_workbook
-from openpyxl.styles import PatternFill, Font, Alignment
+from openpyxl.styles import PatternFill, Font, Alignment, Border, Side
+from openpyxl.utils import get_column_letter
 import openpyxl
 import tempfile
 
@@ -263,6 +264,39 @@ def run_full_process(pim_file_bytes, part_data_file_bytes, progress_bar, status_
                 lookup_values.append(str(val))
 
         matched_rows = preset_df[preset_df.iloc[:, 4].astype(str).isin(lookup_values)]
+
+        # --- Step 12: Final formatting of PIM file ---
+        # Remove column U (21) as it's no longer needed
+        ws.delete_cols(21)
+        
+        # Apply auto filter to all columns
+        max_col = ws.max_column
+        max_row = ws.max_row
+        filter_range = f"A1:{get_column_letter(max_col)}1"
+        ws.auto_filter.ref = filter_range
+        
+        # Add borders to all cells with text and set column widths to fit headers
+        thin_border = Border(
+            left=Side(style='thin'),
+            right=Side(style='thin'),
+            top=Side(style='thin'),
+            bottom=Side(style='thin')
+        )
+        
+        # Set column widths based on header text and add borders to cells with content
+        for col_idx in range(1, max_col + 1):
+            header_cell = ws.cell(row=1, column=col_idx)
+            header_value = header_cell.value
+            if header_value:
+                # Set column width to fit header text (with extra padding for filter icon)
+                col_width = len(str(header_value)) + 5
+                ws.column_dimensions[get_column_letter(col_idx)].width = col_width
+            
+            # Add borders to all cells with text in this column
+            for row_idx in range(1, max_row + 1):
+                cell = ws.cell(row=row_idx, column=col_idx)
+                if cell.value is not None and str(cell.value).strip() != '':
+                    cell.border = thin_border
 
         # Save PIM file to bytes
         pim_output = BytesIO()
