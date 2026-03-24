@@ -243,7 +243,8 @@ def run_full_process(pim_file, part_data_file, preset_source_file, status_callba
         else:
             # Create/load DB from Excel
             print(f"Reading source Excel file: {preset_source_file}")
-            preset_df = pd.read_excel(preset_source_file)
+            preset_df_dict = pd.read_excel(preset_source_file, sheet_name=None)
+            preset_df = pd.concat(preset_df_dict.values(), ignore_index=True)
             # Save as pkl for future use
             db_path = os.path.splitext(preset_source_file)[0] + '.pkl'
             print(f"Saving database to: {db_path}")
@@ -288,13 +289,12 @@ def run_full_process(pim_file, part_data_file, preset_source_file, status_callba
                             ws_out[f'{col_letter}1'].fill = pink_fill
                         elif col_letter == 'F':
                             ws_out[f'{col_letter}1'].fill = blue_fill
-                # Apply font colors
-                for row in ws_out.iter_rows(min_row=1, max_row=ws_out.max_row):
+                # Enable auto filter
+                ws_out.auto_filter.ref = ws_out.dimensions
+                # Apply font colors (except header)
+                for row in ws_out.iter_rows(min_row=2, max_row=ws_out.max_row):
                     for cell in row:
-                        if cell.column_letter == 'E':
-                            cell.font = red_font
-                        else:
-                            cell.font = black_font
+                        cell.font = black_font
                 # Set column widths
                 ws_out.column_dimensions['D'].width = 37
                 ws_out.column_dimensions['E'].width = 80

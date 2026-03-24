@@ -292,11 +292,10 @@ def run_full_process(pim_file_bytes, part_data_file_bytes, progress_bar, status_
                 col_width = len(str(header_value)) + 5
                 ws.column_dimensions[get_column_letter(col_idx)].width = col_width
             
-            # Add borders to all cells with text in this column
+            # Add borders to all cells in this column
             for row_idx in range(1, max_row + 1):
                 cell = ws.cell(row=row_idx, column=col_idx)
-                if cell.value is not None and str(cell.value).strip() != '':
-                    cell.border = thin_border
+                cell.border = thin_border
 
         # Save PIM file to bytes
         pim_output = BytesIO()
@@ -330,12 +329,11 @@ def run_full_process(pim_file_bytes, part_data_file_bytes, progress_bar, status_
                     elif col_letter == 'F':
                         ws_out[f'{col_letter}1'].fill = blue_fill
 
-            for row in ws_out.iter_rows(min_row=1, max_row=ws_out.max_row):
+            ws_out.auto_filter.ref = ws_out.dimensions
+
+            for row in ws_out.iter_rows(min_row=2, max_row=ws_out.max_row):
                 for cell in row:
-                    if cell.column_letter == 'E':
-                        cell.font = red_font
-                    else:
-                        cell.font = black_font
+                    cell.font = black_font
 
             ws_out.column_dimensions['D'].width = 37
             ws_out.column_dimensions['E'].width = 80
@@ -506,9 +504,10 @@ def settings_page():
                         st.info("Loaded from PKL file")
                     else:
                         # Load from Excel and convert to PKL
-                        df = pd.read_excel(uploaded_file)
-                        st.info("Converted Excel to PKL format")
-                    
+                        df = pd.read_excel(uploaded_file) (handles multiple sheets)
+                        df_dict = pd.read_excel(uploaded_file, sheet_name=None)
+                        df = pd.concat(df_dict.values(), ignore_index=True)
+                        st.info(f"Converted Excel ({len(df_dict)} sheets)
                     save_preset_db(df)
                 st.success(f"✅ Database saved successfully! ({len(df):,} rows)")
                 st.rerun()
@@ -531,8 +530,9 @@ def settings_page():
                             df = pickle.load(f)
                         st.info("Loaded from PKL file")
                     else:
-                        df = pd.read_excel(file_path)
-                        st.info("Converted Excel to PKL format")
+                        df_dict = pd.read_excel(file_path, sheet_name=None)
+                        df = pd.concat(df_dict.values(), ignore_index=True)
+                        st.info(f"Converted Excel ({len(df_dict)} sheets) to PKL format")
                     
                     save_preset_db(df)
                 st.success(f"✅ Database saved successfully! ({len(df):,} rows)")
