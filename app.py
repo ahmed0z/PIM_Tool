@@ -503,11 +503,11 @@ def settings_page():
                         df = pickle.load(uploaded_file)
                         st.info("Loaded from PKL file")
                     else:
-                        # Load from Excel and convert to PKL
-                        df = pd.read_excel(uploaded_file) (handles multiple sheets)
+                        # Load from Excel and convert to PKL (handles multiple sheets)
                         df_dict = pd.read_excel(uploaded_file, sheet_name=None)
                         df = pd.concat(df_dict.values(), ignore_index=True)
-                        st.info(f"Converted Excel ({len(df_dict)} sheets)
+                        st.info(f"Converted Excel ({len(df_dict)} sheets) to PKL format")
+                    
                     save_preset_db(df)
                 st.success(f"✅ Database saved successfully! ({len(df):,} rows)")
                 st.rerun()
